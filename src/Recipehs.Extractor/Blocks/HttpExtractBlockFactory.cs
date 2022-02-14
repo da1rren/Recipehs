@@ -31,7 +31,7 @@ public class HttpExtractBlockFactory
                     S3UploaderBlock.RecipeKey(recipeId));
                 _logger.LogInformation("Skipping {0}", recipeId);
 
-                return new RecipeResult(recipeId, null);
+                return new RecipeResult(recipeId, string.Empty);
             }
             catch
             {

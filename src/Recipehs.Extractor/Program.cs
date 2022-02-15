@@ -13,7 +13,7 @@ await using var serviceProvider = new ServiceCollection()
     .AddLogging(cfg => cfg.AddConsole())
     .AddHttpClient()
     .AddSingleton<RangeBlock>()
-    .AddSingleton<HttpExtractBlockFactory>()
+    .AddSingleton<HtmlParserBlock>()
     .AddSingleton<S3UploaderBlock>()
     .AddSingleton<PipelineComposer>()
     .AddSingleton(new AmazonS3Config
@@ -30,5 +30,5 @@ await using var serviceProvider = new ServiceCollection()
     .BuildServiceProvider();
 
 var composer = serviceProvider.GetRequiredService<PipelineComposer>();
-await composer.Execute(25_000, 25_005);
+await composer.Execute(20510, 20520, cleanRun: true);
 

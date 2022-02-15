@@ -3,21 +3,14 @@ namespace Recipehs.Extractor.Blocks;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
-
-public enum S3UploadResult
-{
-    Default = 0,
-    Success = 1,
-    Failure = 2,
-    Skipped = 4
-}
 
 public class S3UploaderBlock
 {
     public const string BUCKET_NAME = "all-recipes";
-    public static string RecipeKey(int RecipeId) => $"all-recipes/{RecipeId}";
-        
+    public static string RecipeKey(int recipeId) => $"all-recipes/{recipeId}";
+    
     private readonly AmazonS3Client _s3Client;
     private readonly ILogger<S3UploaderBlock> _logger;
     
@@ -27,25 +20,31 @@ public class S3UploaderBlock
         _logger = logger;
     }
     
-    public ActionBlock<RecipeResult> Build(ExecutionDataflowBlockOptions options)
+    public ActionBlock<RecipeResponseResult[]> Build(ExecutionDataflowBlockOptions options)
     {
-        return new ActionBlock<RecipeResult>(async recipeResult =>
-        {
-            if (string.IsNullOrWhiteSpace(recipeResult.Html))
-            {
-                return;
-            }
+        var settings = new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase};
             
-            _logger.LogInformation($@"Uploading {recipeResult.RecipeId} to s3");
-            var putRequest = new PutObjectRequest
+        return new ActionBlock<RecipeResponseResult[]>(async recipeResults =>
+        {
+            var recipes = recipeResults
+                .Where(x => x.Status == ParseStatus.Success)
+                .Select(x => x.Recipe!)
+                .ToArray();
+            
+            var rangeStart = recipes.Min(x => x.RecipeId);
+            var rangeEnd = recipes.Max(x => x.RecipeId);
+
+            _logger.LogInformation($"Uploading {rangeStart} - {rangeEnd} to s3");
+
+            var s3UploadRequest = new PutObjectRequest
             {
                 BucketName = BUCKET_NAME,
-                Key = RecipeKey(recipeResult.RecipeId),
-                ContentType = "text/html",
-                ContentBody = recipeResult.Html
+                Key = $"all-recipes/{rangeStart}-{rangeEnd}.json",
+                ContentType = "application/json",
+                ContentBody = JsonSerializer.Serialize(recipes, settings)
             };
 
-            await _s3Client.PutObjectAsync(putRequest);
+            await _s3Client.PutObjectAsync(s3UploadRequest);
         }, options);
     }
 }

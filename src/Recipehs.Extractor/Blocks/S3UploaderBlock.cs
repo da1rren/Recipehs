@@ -9,8 +9,7 @@ using System.Threading.Tasks.Dataflow;
 public class S3UploaderBlock
 {
     public const string BUCKET_NAME = "all-recipes";
-    public static string RecipeKey(int recipeId) => $"all-recipes/{recipeId}";
-    
+
     private readonly AmazonS3Client _s3Client;
     private readonly ILogger<S3UploaderBlock> _logger;
     

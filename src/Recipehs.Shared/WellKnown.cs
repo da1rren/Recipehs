@@ -9,6 +9,11 @@ public static class WellKnown
         public const string BUCKET_NAME = "all-recipes";
     }
 
+    public static class ElasticSearch
+    {
+        public const string RECIPE_WILDCARD_INDEX = "recipes-from-*";
+    }
+    
     public static class Json
     {
         public static JsonSerializerOptions DefaultSettings = new JsonSerializerOptions

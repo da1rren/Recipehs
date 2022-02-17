@@ -2,6 +2,7 @@ namespace Recipehs.Indexer.Services;
 
 using Microsoft.Extensions.Logging;
 using Nest;
+using Shared;
 using Shared.Models;
 
 public class ElasticService
@@ -12,7 +13,6 @@ public class ElasticService
 
     private const string IndexPatternName = "recipes-from";
 
-    private const string RecipeWildcardIndex = "recipes-from-*";
     private static string GenerateIndexName(string source) => $"recipes-from-{source.TrimEnd('/')}";
 
     public ElasticService(ElasticClient client, ILogger<ElasticClient> logger)
@@ -90,14 +90,14 @@ public class ElasticService
 
     public async Task TryCreateRecipeIndexPatternAsync(bool recreate, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation($"Ensuring index pattern {RecipeWildcardIndex} exists.");
+        _logger.LogInformation($"Ensuring index pattern {WellKnown.ElasticSearch.RECIPE_WILDCARD_INDEX} exists.");
         var isExistingResponse = await _client.Indices.TemplateExistsAsync(
             IndexPatternName, ct: cancellationToken);
 
         if (recreate && isExistingResponse.Exists)
         {
             _logger.LogInformation("Index pattern will be recreated.");
-            await _client.Indices.DeleteTemplateV2Async(RecipeWildcardIndex, ct: cancellationToken);
+            await _client.Indices.DeleteTemplateV2Async(WellKnown.ElasticSearch.RECIPE_WILDCARD_INDEX, ct: cancellationToken);
         }
         else if (isExistingResponse.Exists)
         {
@@ -107,7 +107,7 @@ public class ElasticService
 
         var response = await _client.Indices
             .PutTemplateV2Async(IndexPatternName, p => p
-                    .IndexPatterns(RecipeWildcardIndex),
+                    .IndexPatterns(WellKnown.ElasticSearch.RECIPE_WILDCARD_INDEX),
                 cancellationToken);
 
         if (response.Acknowledged)

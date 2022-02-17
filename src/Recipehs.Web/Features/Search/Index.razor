@@ -62,7 +62,7 @@ Welcome to your new app.
             return;
         }
 
-        var searchResponse = _elasticClient.Search<Recipe>(s => s
+        var searchResponse = await _elasticClient.SearchAsync<Recipe>(s => s
             .Index(WellKnown.ElasticSearch.RECIPE_WILDCARD_INDEX)
             .Query(q => q
                 .MultiMatch(mm => mm

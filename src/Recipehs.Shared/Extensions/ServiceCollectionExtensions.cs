@@ -15,18 +15,22 @@ public static class ServiceCollectionExtensions
         {
             ServiceURL = configuration["S3_ENDPOINT"]
         })
-        .AddSingleton(x =>
+        .AddSingleton(sp =>
         {
-            var config = x.GetService<AmazonS3Config>();
+            var config = sp.GetService<AmazonS3Config>();
             var accessKey = configuration["S3_ACCESS_KEY"];
             var secretKey = configuration["S3_SECRET_KEY"];
+            
+            ArgumentNullException.ThrowIfNull(accessKey);
+            ArgumentNullException.ThrowIfNull(secretKey);
+            
             return new AmazonS3Client(accessKey, secretKey, config);
         });
     }
 
     public static IServiceCollection RegisterElasticSearch(this IServiceCollection services, IConfiguration configuration)
     {
-        return services.AddSingleton(x =>
+        return services.AddSingleton(_ =>
         {
             var cloudId = configuration["ES_CLOUD_ID"];
             var keyId = configuration["ES_KEY_ID"];

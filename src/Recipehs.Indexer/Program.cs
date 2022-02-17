@@ -12,7 +12,12 @@ await using var serviceProvider = new ServiceCollection()
     .AddLogging(cfg => cfg.AddConsole())
     .RegisterS3(configuration)
     .RegisterElasticSearch(configuration)
+    .AddSingleton<ElasticService>()
+    .AddSingleton<IndexService>()
     .BuildServiceProvider();
 
 var indexService = serviceProvider.GetRequiredService<IndexService>();
-await indexService.IndexAll();
+await indexService.IndexAll(recreate: true);
+
+var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Index complete.");

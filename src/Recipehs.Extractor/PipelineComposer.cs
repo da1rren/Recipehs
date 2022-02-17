@@ -9,20 +9,18 @@ using System.Threading.Tasks.Dataflow;
 
 public class PipelineComposer
 {
-    private readonly RangeBlock _rangeBlock;
+    // private readonly RangeBlock _rangeBlock;
     private readonly HtmlParserBlock _htmlParserBlock;
     private readonly S3UploaderBlock _s3UploaderBlock;
     private readonly AmazonS3Client _s3Client;
     private readonly ILogger<PipelineComposer> _logger;
 
     public PipelineComposer(
-        RangeBlock rangeBlock,
         HtmlParserBlock htmlParserBlock,
         S3UploaderBlock s3UploaderBlock,
         AmazonS3Client s3Client,
         ILogger<PipelineComposer> logger)
     {
-        _rangeBlock = rangeBlock;
         _htmlParserBlock = htmlParserBlock;
         _s3UploaderBlock = s3UploaderBlock;
         _s3Client = s3Client;
@@ -37,17 +35,19 @@ public class PipelineComposer
             await CleanUp();
         }
 
-        var rangeBlock = _rangeBlock.Build();
-        var httpBlockPolicy = new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 4};
+        var httpBlockPolicy = new ExecutionDataflowBlockOptions
+        {
+            MaxDegreeOfParallelism = 8,
+            MaxMessagesPerTask = 8,
+            BoundedCapacity = 1000
+        };
         var httpBlock = _htmlParserBlock.Build(httpBlockPolicy);
 
         var s3BlockPolicy = new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 16};
         var s3Block = _s3UploaderBlock.Build(s3BlockPolicy);
         var linkOptions = new DataflowLinkOptions {PropagateCompletion = true};
-
-        var batchBlock = new BatchBlock<RecipeResponseResult>(batchSize);
         
-        rangeBlock.LinkTo(httpBlock, linkOptions);
+        var batchBlock = new BatchBlock<RecipeResponseResult>(batchSize);
         
         httpBlock.LinkTo(batchBlock, linkOptions, 
             x => x.Status == ParseStatus.Success);
@@ -58,8 +58,12 @@ public class PipelineComposer
         
         batchBlock.LinkTo(s3Block, linkOptions);
         
-        rangeBlock.Post((start, end));
-        rangeBlock.Complete();
+        foreach(var i in Enumerable.Range(start, end - start))
+        {
+            httpBlock.Post(i);
+        }
+        
+        httpBlock.Complete();
         await s3Block.Completion;
         Console.WriteLine($"Completed range {start} - {end}.");
     }

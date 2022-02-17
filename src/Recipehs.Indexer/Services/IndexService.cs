@@ -20,13 +20,11 @@ public class IndexService
 {
     private readonly AmazonS3Client _s3Client;
     private readonly ElasticService _elasticService;
-    private readonly ILogger<IndexService> _logger;
 
-    public IndexService(AmazonS3Client s3Client, ElasticService elasticService, ILogger<IndexService> logger)
+    public IndexService(AmazonS3Client s3Client, ElasticService elasticService)
     {
         _s3Client = s3Client;
         _elasticService = elasticService;
-        _logger = logger;
     }
 
     public async Task IndexAll(bool recreate = false, CancellationToken cancellationToken = default)
@@ -50,7 +48,7 @@ public class IndexService
 
                 var recipes = await JsonSerializer.DeserializeAsync<IEnumerable<Recipe>>(
                     objectResponse.ResponseStream, WellKnown.Json.DefaultSettings, cancellationToken);
-
+                
                 await _elasticService.IndexRecipes(prefix, recipes ?? Enumerable.Empty<Recipe>(), cancellationToken);
             }
         }

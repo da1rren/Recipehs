@@ -1,9 +1,8 @@
-namespace Recipehs.Indexer.Extensions;
+namespace Recipehs.Indexer.Services;
 
 using Microsoft.Extensions.Logging;
 using Nest;
 using Shared.Models;
-using System.Runtime.CompilerServices;
 
 public class ElasticService
 {
@@ -14,7 +13,7 @@ public class ElasticService
     private const string IndexPatternName = "recipes-from";
 
     private const string RecipeWildcardIndex = "recipes-from-*";
-    private static string GenerateIndexName(string source) => $"recipes-from-{source}";
+    private static string GenerateIndexName(string source) => $"recipes-from-{source.TrimEnd('/')}";
 
     public ElasticService(ElasticClient client, ILogger<ElasticClient> logger)
     {
@@ -91,7 +90,7 @@ public class ElasticService
 
     public async Task TryCreateRecipeIndexPatternAsync(bool recreate, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Ensuring index pattern exists.");
+        _logger.LogInformation($"Ensuring index pattern {RecipeWildcardIndex} exists.");
         var isExistingResponse = await _client.Indices.TemplateExistsAsync(
             IndexPatternName, ct: cancellationToken);
 

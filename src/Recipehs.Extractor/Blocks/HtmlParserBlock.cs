@@ -65,6 +65,6 @@ public class HtmlParserBlock
             var recipe = new Recipe(formattedId, title, ingredients, steps, images!);
                 
             return new RecipeResponseResult(ParseStatus.Success, recipe);
-        });
+        }, options);
     }
 }

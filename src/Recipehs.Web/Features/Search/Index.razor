@@ -19,6 +19,11 @@ Welcome to your new app.
     <button type="submit">Submit</button>
 </EditForm>
 
+@if (_viewModel.HasSearched && !_recipes.Any())
+{
+    <h2 class="text-danger">No results</h2>
+}
+
 @foreach (var recipe in _recipes)
 {
     <h2>@recipe.Title</h2>
@@ -40,6 +45,8 @@ Welcome to your new app.
     </ul>
 }
 
+
+
 @code {
     private readonly SearchViewModel _viewModel = new();
 
@@ -47,6 +54,8 @@ Welcome to your new app.
 
     private async Task HandleValidSubmit()
     {
+        _viewModel.HasSearched = true;
+
         if (string.IsNullOrEmpty(_viewModel.Query))
         {
             _recipes = Enumerable.Empty<Recipe>();

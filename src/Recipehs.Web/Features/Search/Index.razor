@@ -33,10 +33,10 @@ Welcome to your new app.
 
     <h3>Steps</h3>
     <ul>
-    @foreach (var step in recipe.Steps)
-    {
-        <li>@step</li>
-    }
+        @foreach (var step in recipe.Steps)
+        {
+            <li>@step</li>
+        }
     </ul>
 }
 
@@ -58,8 +58,8 @@ Welcome to your new app.
             .Query(q => q
                 .MultiMatch(mm => mm
                     .Fields(f => f.
-                        Field(ff => ff.Title)
-                        .Field(ff => ff.Ingredient))
+                        Field(ff => ff.Title, boost: 2).
+                        Field(ff => ff.Ingredient))
                     .Query(_viewModel.Query))
             ));
 

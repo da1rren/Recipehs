@@ -1,6 +1,13 @@
-name: GitHub Actions Demo
+name: "Recipehs Build"
 on: [push]
 jobs:
+  Docker-Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Docker compose build
+        run: docker compose build
+        working-directory: src
   Dotnet-Build:
     runs-on: ubuntu-latest
     strategy:

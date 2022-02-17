@@ -4,6 +4,7 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["Recipehs.Indexer/Recipehs.Indexer.csproj", "Recipehs.Indexer/"]
+COPY ["Recipehs.Shared/Recipehs.Shared.csproj", "Recipehs.Shared/"]
 RUN dotnet restore "Recipehs.Indexer/Recipehs.Indexer.csproj"
 COPY . .
 WORKDIR "/src/Recipehs.Indexer"

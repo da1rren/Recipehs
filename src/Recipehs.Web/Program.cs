@@ -1,13 +1,17 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
+using Recipehs.Shared.Extensions;
 using Recipehs.Web.Data;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication
+    .CreateBuilder(args);
 
 // Add services to the container.
+builder.Configuration.AddUserSecrets(typeof(Program).Assembly);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
+
+builder.Services
+    .RegisterElasticSearch(builder.Configuration);
 
 var app = builder.Build();
 

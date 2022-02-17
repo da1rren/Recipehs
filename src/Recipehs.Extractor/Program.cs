@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Recipehs.Extractor;
 using Recipehs.Extractor.Blocks;
 using Microsoft.Extensions.Logging;
+using Recipehs.Shared.Extensions;
 
 var configuration = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
@@ -16,17 +17,7 @@ await using var serviceProvider = new ServiceCollection()
     .AddSingleton<HtmlParserBlock>()
     .AddSingleton<S3UploaderBlock>()
     .AddSingleton<PipelineComposer>()
-    .AddSingleton(new AmazonS3Config
-    {
-        ServiceURL = configuration["S3_ENDPOINT"]
-    })
-    .AddSingleton(x =>
-    {
-        var config = x.GetService<AmazonS3Config>();
-        var accessKey = configuration["S3_ACCESS_KEY"];
-        var secretKey = configuration["S3_SECRET_KEY"];
-        return new AmazonS3Client(accessKey, secretKey, config);
-    })
+    .RegisterS3(configuration)
     .BuildServiceProvider();
 
 var composer = serviceProvider.GetRequiredService<PipelineComposer>();

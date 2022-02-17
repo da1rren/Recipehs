@@ -1,0 +1,29 @@
+version: '3.7'
+
+services:
+  recipehs-web:
+    build:
+      dockerfile: Recipehs.Web/Dockerfile
+      context: .
+    depends_on:
+      - elasticsearch
+      - kibana
+    ports:
+      - 5001:80
+    volumes:
+      - '~/.microsoft/usersecrets:/root/.microsoft/usersecrets'
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    environment:
+      - discovery.type=single-node
+   
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    volumes:
+      - ~/Projects/Files/kibana/config:/usr/share/kibana/config
+      - ~/Projects/Files/kibana/data:/usr/share/kibana/data
+    ports:
+    - 5601:5601

@@ -3,6 +3,7 @@ namespace Recipehs.Extractor.Blocks;
 using AngleSharp;
 using AngleSharp.Dom;
 using Microsoft.Extensions.Logging;
+using Shared.Models;
 using System.Net;
 using System.Threading.Tasks.Dataflow;
 
@@ -14,9 +15,6 @@ public enum ParseStatus
 }
 
 public record RecipeResponseResult(ParseStatus Status, Recipe? Recipe);
-
-public record Recipe(int RecipeId, string Title,
-    IEnumerable<string> Ingredient, IEnumerable<string> Steps, IEnumerable<string> Images);
 
 public class HtmlParserBlock
 {
@@ -62,8 +60,9 @@ public class HtmlParserBlock
             
             _logger.LogInformation($"Recipe {recipeId} parsed with {steps.Count} steps and {ingredients.Count} steps");
 
+            var formattedId = $@"ar-{recipeId}";
             var title = document?.Title?.Replace(" | Allrecipes", string.Empty) ?? string.Empty;
-            var recipe = new Recipe(recipeId, title, ingredients, steps, images!);
+            var recipe = new Recipe(formattedId, title, ingredients, steps, images!);
                 
             return new RecipeResponseResult(ParseStatus.Success, recipe);
         });

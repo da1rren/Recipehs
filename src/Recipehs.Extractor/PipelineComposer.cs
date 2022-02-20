@@ -27,7 +27,7 @@ public class PipelineComposer
         _logger = logger;
     }
 
-    public async Task Execute(int start, int end, int batchSize = 1000, bool cleanRun = false)
+    public async Task Execute(int start, int end, int batchSize = 100, bool cleanRun = false)
     {
         if (cleanRun)
         {
@@ -37,24 +37,18 @@ public class PipelineComposer
 
         var httpBlockPolicy = new ExecutionDataflowBlockOptions
         {
-            MaxDegreeOfParallelism = 8
+            MaxDegreeOfParallelism = 16
         };
         
         var httpBlock = _htmlParserBlock.Build(httpBlockPolicy);
 
-        var s3BlockPolicy = new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 16};
+        var s3BlockPolicy = new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 4};
         var s3Block = _s3UploaderBlock.Build(s3BlockPolicy);
         var linkOptions = new DataflowLinkOptions {PropagateCompletion = true};
         
         var batchBlock = new BatchBlock<RecipeResponseResult>(batchSize);
         
-        httpBlock.LinkTo(batchBlock, linkOptions, 
-            x => x.Status == ParseStatus.Success);
-        
-        // Discard failed.
-        httpBlock.LinkTo(DataflowBlock.NullTarget<RecipeResponseResult>(),
-            x => x.Status != ParseStatus.Success);
-        
+        httpBlock.LinkTo(batchBlock, linkOptions);
         batchBlock.LinkTo(s3Block, linkOptions);
         
         foreach(var i in Enumerable.Range(start, end - start))

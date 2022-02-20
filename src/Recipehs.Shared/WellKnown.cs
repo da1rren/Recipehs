@@ -1,6 +1,7 @@
 namespace Recipehs.Shared;
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 public static class WellKnown
 {
@@ -18,7 +19,11 @@ public static class WellKnown
     {
         public static JsonSerializerOptions DefaultSettings = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters =
+            {
+                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+            }
         };
 
     }

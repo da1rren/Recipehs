@@ -22,14 +22,9 @@ public class S3UploaderBlock
     {
         return new ActionBlock<RecipeResponseResult[]>(async recipeResults =>
         {
-            var recipes = recipeResults
-                .Where(x => x.Status == ParseStatus.Success)
-                .Select(x => x.Recipe!)
-                .ToArray();
+            var rangeStart = recipeResults.Min(x => x.Id);
+            var rangeEnd = recipeResults.Max(x => x.Id);
             
-            var rangeStart = recipes.Min(x => x.RecipeId);
-            var rangeEnd = recipes.Max(x => x.RecipeId);
-
             _logger.LogInformation($"Uploading {rangeStart} - {rangeEnd} to s3");
 
             var s3UploadRequest = new PutObjectRequest
@@ -37,7 +32,7 @@ public class S3UploaderBlock
                 BucketName = WellKnown.S3.BUCKET_NAME,
                 Key = $"all-recipes/{rangeStart}-{rangeEnd}.json",
                 ContentType = "application/json",
-                ContentBody = JsonSerializer.Serialize(recipes, WellKnown.Json.DefaultSettings)
+                ContentBody = JsonSerializer.Serialize(recipeResults, WellKnown.Json.DefaultSettings)
             };
 
             await _s3Client.PutObjectAsync(s3UploadRequest);

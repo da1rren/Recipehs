@@ -11,17 +11,22 @@ var configuration = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
     .Build();
 
+var start = configuration.GetValue<int>("RANGE_START");
+var end = configuration.GetValue<int>("RANGE_END");
+
 await using var serviceProvider = new ServiceCollection()
     .AddLogging(cfg => cfg.AddConsole())
     .AddHttpClient()
-    .AddSingleton<HtmlParserBlock>()
+    .AddSingleton(sp =>
+    {
+        var logger = sp.GetRequiredService<ILogger<HtmlParserBlock>>();
+        var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+        return new HtmlParserBlock(logger, httpClientFactory, start);
+    })
     .AddSingleton<S3UploaderBlock>()
     .AddSingleton<PipelineComposer>()
     .RegisterS3(configuration)
     .BuildServiceProvider();
-
-var start = configuration.GetValue<int>("RANGE_START");
-var end = configuration.GetValue<int>("RANGE_END");
 
 var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 

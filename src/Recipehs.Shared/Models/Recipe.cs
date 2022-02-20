@@ -8,20 +8,26 @@ public class Recipe
 {
     [JsonPropertyName("_id")]
     public string RecipeId { get; init; }
+    
     public string Title { get; init; }
 
+    public string? Summary { get; init; }
+    
     public IEnumerable<string> Ingredient { get; init; }
+    
     public IEnumerable<string> Steps { get; init; }
+    
     public IEnumerable<string> Images { get; init; }
 
-    public Recipe(string recipeId, string title, IEnumerable<string> ingredient, 
+    public Recipe(string recipeId, string title, string? summary, IEnumerable<string> ingredient, 
         IEnumerable<string> steps, IEnumerable<string> images)
     {
-        this.RecipeId = recipeId;
-        this.Title = title;
-        this.Ingredient = ingredient;
-        this.Steps = steps;
-        this.Images = images;
+        RecipeId = recipeId;
+        Title = title;
+        Summary = summary;
+        Ingredient = ingredient;
+        Steps = steps;
+        Images = images;
     }
 
     public void Deconstruct(out string recipeId, out string title, out IEnumerable<string> ingredient, out IEnumerable<string> steps, out IEnumerable<string> images)

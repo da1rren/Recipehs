@@ -9,6 +9,7 @@ public class Recipe
     [JsonPropertyName("_id")]
     public string RecipeId { get; init; }
     public string Title { get; init; }
+
     public IEnumerable<string> Ingredient { get; init; }
     public IEnumerable<string> Steps { get; init; }
     public IEnumerable<string> Images { get; init; }

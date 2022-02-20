@@ -37,10 +37,9 @@ public class PipelineComposer
 
         var httpBlockPolicy = new ExecutionDataflowBlockOptions
         {
-            MaxDegreeOfParallelism = 8,
-            MaxMessagesPerTask = 8,
-            BoundedCapacity = 1000
+            MaxDegreeOfParallelism = 8
         };
+        
         var httpBlock = _htmlParserBlock.Build(httpBlockPolicy);
 
         var s3BlockPolicy = new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 16};

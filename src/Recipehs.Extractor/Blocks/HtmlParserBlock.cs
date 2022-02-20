@@ -15,7 +15,8 @@ public enum ParseStatus
 {
     Default = 0,
     Success = 1,
-    Failure = 2
+    Failure = 2,
+    NetworkFailure = 4
 }
 
 public class RecipeResponseResult
@@ -46,6 +47,11 @@ public class RecipeResponseResult
         };
     }
 
+    public static RecipeResponseResult Failure(ParseStatus parseStatus, int id, Uri source)
+    {
+        return new RecipeResponseResult(id, source, parseStatus);
+    }
+    
     public static RecipeResponseResult Failure(int id, Uri source)
     {
         return new RecipeResponseResult(id, source, ParseStatus.Failure);
@@ -76,16 +82,16 @@ public class HtmlParserBlock
             var id = Interlocked.Increment(ref _index);
             var config = Configuration.Default.WithDefaultLoader();
             var uri = new Uri($"https://www.allrecipes.com/recipe/{recipeId}");
-            var document = await TryGetDocumentAsync(uri);
+            var (success, statusCode, document) = await TryGetDocumentAsync(uri);
             
             // We could retry, it might just be network failure.
             // But for the moment lets not.
-            if (document == null)
+            if (!success)
             {
-                return RecipeResponseResult.Failure(id, uri);
+                return RecipeResponseResult.Failure(ParseStatus.NetworkFailure, id, uri);
             }
 
-            if (document.StatusCode != HttpStatusCode.OK)
+            if (statusCode != HttpStatusCode.OK)
             {
                 _logger.LogInformation($"Recipe {recipeId} returned {document.StatusCode}");
                 return RecipeResponseResult.Failure(id, uri);
@@ -137,7 +143,7 @@ public class HtmlParserBlock
         }, options);
     }
 
-    private async Task<IHtmlDocument?> TryGetDocumentAsync(Uri uri)
+    private async Task<(bool success, HttpStatusCode? statusCode, IHtmlDocument? document)> TryGetDocumentAsync(Uri uri)
     {
         var htmlParser = new HtmlParser();
         var client = _httpClientFactory.CreateClient();
@@ -160,12 +166,12 @@ public class HtmlParserBlock
             }
 
             await using var stream = await response.Content.ReadAsStreamAsync();
-            return htmlParser.ParseDocument(stream);
+            return (true, response.StatusCode, htmlParser.ParseDocument(stream));
         }
         catch (HttpRequestException)
         {
             _logger.LogWarning($@"Error loading {uri}");
-            return null;
+            return (false, null, null);
         }
     }
 }

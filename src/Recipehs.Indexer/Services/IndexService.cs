@@ -7,6 +7,7 @@ using Nest;
 using Shared;
 using Shared.Models;
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 
 /// <summary>
@@ -40,16 +41,26 @@ public class IndexService
         {
             var keys = await _s3Client.ListKeysByPrefix(
                 WellKnown.S3.BUCKET_NAME, prefix, cancellationToken);
-
+            
             foreach (var key in keys)
             {
                 var objectResponse = await _s3Client.GetObjectAsync(
                     WellKnown.S3.BUCKET_NAME, key, cancellationToken);
 
-                var recipes = await JsonSerializer.DeserializeAsync<IEnumerable<Recipe>>(
+                var recipeResults = await JsonSerializer.DeserializeAsync<IEnumerable<RecipeResponseResult>>(
                     objectResponse.ResponseStream, WellKnown.Json.DefaultSettings, cancellationToken);
                 
-                await _elasticService.IndexRecipes(prefix, recipes ?? Enumerable.Empty<Recipe>(), cancellationToken);
+                // Do something with the value
+
+                var recipes = recipeResults
+                    ?.Where(x => x.Status == ParseStatus.Success && x.Recipe != null)
+                    ?.Select(x => x.Recipe!)
+                    ?.ToList() ?? Enumerable.Empty<Recipe>();
+                
+                if (recipes.Any())
+                {
+                    await _elasticService.IndexRecipes(prefix, recipes!, cancellationToken);
+                }
             }
         }
     }

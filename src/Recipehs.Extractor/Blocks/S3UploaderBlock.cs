@@ -4,6 +4,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using Shared;
+using Shared.Models;
 using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 

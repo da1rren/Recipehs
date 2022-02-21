@@ -5,6 +5,7 @@ using Amazon.S3.Model;
 using Blocks;
 using Microsoft.Extensions.Logging;
 using Shared;
+using Shared.Models;
 using System.Threading.Tasks.Dataflow;
 
 public class PipelineComposer

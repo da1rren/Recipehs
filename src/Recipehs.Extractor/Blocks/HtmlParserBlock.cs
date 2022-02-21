@@ -1,62 +1,12 @@
 namespace Recipehs.Extractor.Blocks;
 
-using Amazon.Auth.AccessControlPolicy;
-using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Microsoft.Extensions.Logging;
 using Shared.Models;
 using System.Net;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks.Dataflow;
-
-public enum ParseStatus
-{
-    Default = 0,
-    Success = 1,
-    Failure = 2,
-    NetworkFailure = 4
-}
-
-public class RecipeResponseResult
-{
-    public int Id { get; set; }
-    
-    public Uri Source { get; private init; }
-    
-    public ParseStatus Status { get; private init; }
-
-    public string? Html { get; private init; }
-    
-    public Recipe? Recipe { get; private init; }
-
-    private RecipeResponseResult(int id, Uri source, ParseStatus status)
-    {
-        Id = id;
-        Source = source;
-        Status = status;
-    }
-    
-    public static RecipeResponseResult Success(int id, Uri source, string html, Recipe recipe)
-    {
-        return new RecipeResponseResult(id, source, ParseStatus.Success)
-        {
-            Html = html,
-            Recipe = recipe
-        };
-    }
-
-    public static RecipeResponseResult Failure(ParseStatus parseStatus, int id, Uri source)
-    {
-        return new RecipeResponseResult(id, source, parseStatus);
-    }
-    
-    public static RecipeResponseResult Failure(int id, Uri source)
-    {
-        return new RecipeResponseResult(id, source, ParseStatus.Failure);
-    }
-}
 
 public class HtmlParserBlock
 {
@@ -73,16 +23,20 @@ public class HtmlParserBlock
 
     public TransformBlock<int, RecipeResponseResult> Build(ExecutionDataflowBlockOptions options)
     {
-        const string ingredientSelector = ".ingredients-item-name";
-        const string stepSelector = ".instructions-section-item > .section-body";
+        const string ingredientSelector = ".ingredients-item-name, .recipe-ingred_txt";
+        const string stepSelector = ".instructions-section-item > .section-body, .recipe-directions__list--item";
         const string imageSelector = ".image-slide noscript img";
+        const string documentSelector = ".recipe-container, .recipe-container-outer";
 
         return new TransformBlock<int, RecipeResponseResult>(async recipeId =>
         {
             var id = Interlocked.Increment(ref _index);
-            var config = Configuration.Default.WithDefaultLoader();
             var uri = new Uri($"https://www.allrecipes.com/recipe/{recipeId}");
             var (success, statusCode, document) = await TryGetDocumentAsync(uri);
+            var html = document?.QuerySelectorAll(documentSelector)
+                ?.FirstOrDefault()
+                ?.Html()
+                .Trim();
             
             // We could retry, it might just be network failure.
             // But for the moment lets not.
@@ -94,32 +48,34 @@ public class HtmlParserBlock
             if (statusCode != HttpStatusCode.OK)
             {
                 _logger.LogInformation($"Recipe {recipeId} returned {document.StatusCode}");
-                return RecipeResponseResult.Failure(id, uri);
+                return RecipeResponseResult.Failure(ParseStatus.NetworkFailure, id, uri);
             }
 
             var ingredients = document.QuerySelectorAll(ingredientSelector)
                 .Select(static x => x.TextContent)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToList();
 
             if (!ingredients.Any())
             {
                 _logger.LogInformation($"Recipe {recipeId} has no ingredients, this could be a parse error");
-                return RecipeResponseResult.Failure(id, uri);
+                return RecipeResponseResult.Failure(ParseStatus.ParseFailure, id, uri, html: html);
             }
 
             var steps = document.QuerySelectorAll(stepSelector)
                 .Select(static x => x.TextContent)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToList();
 
             if (!steps.Any())
             {
                 _logger.LogInformation($"Recipe {recipeId} has no steps, this could be a parse error");
-                return RecipeResponseResult.Failure(id, uri);
+                return RecipeResponseResult.Failure(ParseStatus.ParseFailure, id, uri, html: html);
             }
 
             var images = document.QuerySelectorAll(imageSelector)
                 .Select(x => x.Attributes.GetNamedItem("src")?.Value)
-                .Where(x => !string.IsNullOrEmpty(x))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
                 .ToList();
 
             _logger.LogInformation(
@@ -131,10 +87,6 @@ public class HtmlParserBlock
                 ?.FirstOrDefault()
                 ?.Text()
                 ?.Trim();
-                
-            var html = document?.GetElementsByClassName("recipe-container")
-                ?.FirstOrDefault()
-                ?.Html();
             
             var recipe = new Recipe(formattedId, title, summary,
                 ingredients, steps, images!);

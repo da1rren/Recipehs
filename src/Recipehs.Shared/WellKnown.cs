@@ -7,12 +7,20 @@ public static class WellKnown
 {
     public static class S3
     {
-        public const string BUCKET_NAME = "all-recipes";
+        public const string RECIPES_BUCKET = "all-recipes";
     }
 
     public static class ElasticSearch
     {
         public const string RECIPE_WILDCARD_INDEX = "recipes-from-*";
+    }
+
+    public static class Kafka
+    {
+        public static class Topics
+        {
+            public const string URLS_TO_PROCESS = "urls-to-process";
+        }
     }
     
     public static class Json

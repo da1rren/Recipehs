@@ -64,7 +64,7 @@ public class PipelineComposer
 
     private async Task CleanUp()
     {
-        var listObjectsRequest = new ListObjectsV2Request {BucketName = WellKnown.S3.BUCKET_NAME, MaxKeys = 1000};
+        var listObjectsRequest = new ListObjectsV2Request {BucketName = WellKnown.S3.RECIPES_BUCKET, MaxKeys = 1000};
         var tasks = new List<Task>();
 
         while (true)
@@ -74,7 +74,7 @@ public class PipelineComposer
             foreach (var @object in s3Response.S3Objects)
             {
                 _logger.LogInformation($"Deleting {s3Response.KeyCount}");
-                tasks.Add(_s3Client.DeleteObjectAsync(WellKnown.S3.BUCKET_NAME, @object.Key));
+                tasks.Add(_s3Client.DeleteObjectAsync(WellKnown.S3.RECIPES_BUCKET, @object.Key));
             }
             
             if (s3Response.KeyCount == 0)

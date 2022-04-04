@@ -30,7 +30,7 @@ public class S3UploaderBlock
 
             var s3UploadRequest = new PutObjectRequest
             {
-                BucketName = WellKnown.S3.BUCKET_NAME,
+                BucketName = WellKnown.S3.RECIPES_BUCKET,
                 Key = $"all-recipes/{rangeStart.ToString("D8")}-{rangeEnd.ToString("D8")}.json",
                 ContentType = "application/json",
                 ContentBody = JsonSerializer.Serialize(recipeResults, WellKnown.Json.DefaultSettings)

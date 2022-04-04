@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml
+    kompose.version: 1.26.1 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: recipehs-web
+  name: recipehs-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: recipehs-web
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml
+        kompose.version: 1.26.1 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: recipehs-web
+    spec:
+      containers:
+        - image: recipehs-web
+          name: recipehs-web
+          ports:
+            - containerPort: 80
+          resources: {}
+          volumeMounts:
+            - mountPath: /root/.microsoft/usersecrets
+              name: recipehs-web-claim0
+      restartPolicy: Always
+      volumes:
+        - name: recipehs-web-claim0
+          persistentVolumeClaim:
+            claimName: recipehs-web-claim0
+status: {}

@@ -1,0 +1,16 @@
+apiVersion: skaffold/v2beta27
+kind: Config
+metadata:
+  name: src
+build:
+  artifacts:
+    - image: recipehs-web
+      context: .
+      docker:
+        dockerfile: Recipehs.Web/Dockerfile
+deploy:
+  kubectl:
+    manifests:
+      - https://download.elastic.co/downloads/eck/2.0.0/crds.yaml
+      - https://download.elastic.co/downloads/eck/2.0.0/operator.yaml
+      - .skaffold/*.yaml
